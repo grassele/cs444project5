@@ -1,6 +1,7 @@
 #include <unistd.h>  // lseek()
 #include "block.h"
 #include "image.h"
+#include "free.h"
 
 
 
@@ -26,4 +27,28 @@ void bwrite(int block_num, unsigned char *block) {
     write(image_fd, block, 4096);
     
     // should there be a return here?
+}
+
+
+
+/* Allocate a previous-free data block from the block map */
+
+int alloc(void) {
+    // find the lowest free inode in the bit map, mark it allocated, and return number or -1 if no free inodes
+
+    // get free block map w bread() -- block 2 is free block bit map
+    unsigned char *bbit_map;
+    bbit_map = bread(2, bbit_map);
+
+    // find_free() to locate a free block
+    int bnum = find_free(bbit_map);
+    if (bnum == -1) {  // no free block found in bit map
+        return -1;
+    }
+    else {
+        // set_free() to mark it as non-free
+        set_free(bbit_map, bnum, 1);
+        // bwrite() to save the block back out to disk - save block or bit map?
+        bwrite(2, bbit_map);
+    }
 }

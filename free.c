@@ -13,6 +13,7 @@ int find_low_clear_bit(unsigned char x){
 /* Set a specific bit to the value in "set" (0 or 1) */
 
 void set_free(unsigned char *block, int num, int set) {   // not sure if we want void to be the return type
+    
     int byte_num = num / 8; // truncates automatically (integer division)
     int bit_num = num % 8;
 
@@ -30,7 +31,8 @@ void set_free(unsigned char *block, int num, int set) {   // not sure if we want
 free inodes or 2 for free data blocks */
 
 int find_free(unsigned char *block) {
-    for (int i = 0; i < 4096; i++) {
+
+    for (int i = 0; i < 4096; i++) {  // do we need to go through all 4096 bytes? or we don't for inode map but do for block?
         int bit_num = find_low_clear_bit(block[i]);
         if (bit_num != -1) {
             return (i * 4096) + bit_num;
