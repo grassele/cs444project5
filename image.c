@@ -4,11 +4,6 @@
 
 
 
-int image_open(char *filename, int truncate);
-int image_close(void);
-
-
-
 /* Opens the image file of the given name, creating it if it doesn't exist, and truncating it to 0 size 
 if truncate is true */ 
 

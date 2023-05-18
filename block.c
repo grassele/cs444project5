@@ -9,9 +9,9 @@
 
 unsigned char *bread(int block_num, unsigned char *block) {
 
-    size_t block_offset = block_num * 4096;  // 4096 is block size
+    size_t block_offset = block_num * BLOCK_SIZE;
     unsigned char *offset_to_block = lseek(image_fd, block_offset, SEEK_SET);  // SEEK_SET offsets from file beginning
-    read(image_fd, block, 4096); // 4096 reads the whole block, do we want to just do part of it? the size of what's stored?
+    read(image_fd, block, BLOCK_SIZE); // reads the whole block, do we want to just do part of it? the size of what's stored?
 
     return block;
 }
@@ -22,9 +22,9 @@ unsigned char *bread(int block_num, unsigned char *block) {
 
 void bwrite(int block_num, unsigned char *block) {
 
-    size_t block_offset = block_num * 4096;
+    size_t block_offset = block_num * BLOCK_SIZE;
     unsigned char *offset_to_block = lseek(image_fd, block_offset, SEEK_SET);
-    write(image_fd, block, 4096);
+    write(image_fd, block, BLOCK_SIZE);
     
     // should there be a return here?
 }
@@ -38,7 +38,7 @@ int alloc(void) {
 
     // get free block map w bread() -- block 2 is free block bit map
     unsigned char *bbit_map;
-    bbit_map = bread(2, bbit_map);
+    bbit_map = bread(FREE_BLOCK_MAP_BLOCK_NUM, bbit_map);
 
     // find_free() to locate a free block
     int bnum = find_free(bbit_map);
@@ -48,7 +48,7 @@ int alloc(void) {
     else {
         // set_free() to mark it as non-free
         set_free(bbit_map, bnum, 1);
-        // bwrite() to save the block back out to disk - save block or bit map?
-        bwrite(2, bbit_map);
+        // bwrite() to save the block back out to disk - save whole block or just bit map section?
+        bwrite(FREE_BLOCK_MAP_BLOCK_NUM, bbit_map);
     }
 }

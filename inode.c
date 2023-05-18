@@ -9,7 +9,7 @@ int ialloc(void) {
 
     // get inode map w bread() -- block 1 is inode bit map
     unsigned char *ibit_map;
-    ibit_map = bread(1, ibit_map);
+    ibit_map = bread(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
 
     // find_free() to locate a free inode
     int inum = find_free(ibit_map);
@@ -20,6 +20,6 @@ int ialloc(void) {
         // set_free() to mark it as non-free
         set_free(ibit_map, inum, 1);
         // bwrite() to save the inode back out to disk - save inode or bit map?
-        bwrite(1, ibit_map);
+        bwrite(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
     }
 }
