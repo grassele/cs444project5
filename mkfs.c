@@ -3,7 +3,7 @@
 #include "block.h"
 
 
-/* Create the file system, in an open image */
+/* Create the file system, in open image */
 
 void mkfs(void) {
 
@@ -18,7 +18,9 @@ void mkfs(void) {
 
     // (2) Mark data blocks 0-6 as allocated by calling alloc() 7 times.
 
-    
+    for (int i = 0; i < NUM_PRECLAIMED_BLOCKS; i++){
+        alloc(void);
+    }
 
     // (3) (not part of project 5) Add the root directory and other things needed to bootstrap the file system.
 }
