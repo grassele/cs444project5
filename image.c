@@ -1,5 +1,6 @@
-#include <fcntl.h>  // open()
+#include <fcntl.h>   // open()
 #include <unistd.h>  // close()
+#include <stdio.h>    // perror()
 #include "image.h"
 
 
@@ -13,6 +14,7 @@ int image_open(char *filename, int truncate) {
         int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, 0600); // 0600 means rw- --- ---
         if (fd == -1) {
             perror("Failed to open image file\n");
+            return -1;
         }    
         else {
             image_fd = fd;
@@ -23,6 +25,7 @@ int image_open(char *filename, int truncate) {
         int fd = open(filename, O_RDWR | O_CREAT, 0600);
         if (fd == -1) {
             perror("Failed to open image file\n");
+            return -1;
         }    
         else {
             image_fd = fd;

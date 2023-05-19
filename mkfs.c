@@ -1,7 +1,9 @@
 #include <unistd.h>
-#include "mkfs.h"
 #include "block.h"
+#include "image.h"
+#include "mkfs.h"
 
+#include <stdio.h> // ELIZABETH DELETE THIS
 
 /* Create the file system, in open image */
 
@@ -19,7 +21,7 @@ void mkfs(void) {
     // (2) Mark data blocks 0-6 as allocated by calling alloc() 7 times.
 
     for (int i = 0; i < NUM_PRECLAIMED_BLOCKS; i++){
-        alloc(void);
+        printf("block num allocated in mkfs function: %d", alloc());  // ELIZABETH REMOVE PRINT PART, LEAVE JUST ALLOC
     }
 
     // (3) (not part of project 5) Add the root directory and other things needed to bootstrap the file system.

@@ -20,13 +20,13 @@ simfs.a: block.o free.o image.o mkfs.o
 # Build C files to object files
 
 block.o: block.c image.o free.o
-	gcc -Wall -Wextra -c $@ $<
+	gcc -Wall -Wextra -c -o $@ $<
 
 free.o: free.c block.o
-	gcc -Wall -Wextra -c $@ $<
+	gcc -Wall -Wextra -c -o $@ $<
 
 image.o: image.c
-	gcc -Wall -Wextra -c $@ $<
+	gcc -Wall -Wextra -c -o $@ $<
 
 mkfs.o: mkfs.c block.o
-	gcc -Wall -Wextra -c $@ $<
+	gcc -Wall -Wextra -c -o $@ $<
