@@ -10,27 +10,19 @@ if truncate is true */
 
 int image_open(char *filename, int truncate) {
 
-    if (truncate) {
-        int fd = open(filename, O_RDWR | O_CREAT | O_TRUNC, 0600); // 0600 means rw- --- ---
-        if (fd == -1) {
-            perror("Failed to open image file\n");
-            return -1;
-        }    
-        else {
-            image_fd = fd;
-            return image_fd;
-        }
-    }
+    int flags = O_RDWR | O_CREAT;
+    if (truncate) 
+        flags |= O_TRUNC;
+
+    int fd = open(filename, flags, 0600);
+
+    if (fd == -1) {
+        perror("Failed to open image file\n");
+        return -1;
+    }    
     else {
-        int fd = open(filename, O_RDWR | O_CREAT, 0600);
-        if (fd == -1) {
-            perror("Failed to open image file\n");
-            return -1;
-        }    
-        else {
-            image_fd = fd;
-            return image_fd;
-        }
+        image_fd = fd;
+        return image_fd;
     }
 }
 

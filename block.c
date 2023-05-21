@@ -37,7 +37,7 @@ int alloc(void) {
     // find the lowest free inode in the bit map, mark it allocated, and return number or -1 if no free inodes
 
     // get free block map w bread() -- block 2 is free block bit map
-    unsigned char *bbit_map = NULL;
+    unsigned char bbit_map[BLOCK_SIZE];
     bbit_map = bread(FREE_BLOCK_MAP_BLOCK_NUM, bbit_map);
 
     // find_free() to locate a free block

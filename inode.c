@@ -8,7 +8,7 @@ int ialloc(void) {
     // Find the lowest free inode in the bit map, mark it allocated, and return number or -1 if no free inodes
 
     // Get inode map
-    unsigned char *ibit_map;
+    unsigned char ibit_map[BLOCK_SIZE];
     ibit_map = bread(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
 
     // Locate a free inode
