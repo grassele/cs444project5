@@ -9,7 +9,7 @@ int ialloc(void) {
 
     // Get inode map
     unsigned char ibit_map[BLOCK_SIZE];
-    ibit_map = bread(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
+    strncpy(ibit_map, bread(FREE_INODE_MAP_BLOCK_NUM, ibit_map), BLOCK_SIZE);
 
     // Locate a free inode
     int inum = find_free(ibit_map);

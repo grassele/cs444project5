@@ -38,7 +38,7 @@ int alloc(void) {
 
     // get free block map w bread() -- block 2 is free block bit map
     unsigned char bbit_map[BLOCK_SIZE];
-    bbit_map = bread(FREE_BLOCK_MAP_BLOCK_NUM, bbit_map);
+    strncpy(bbit_map, bread(FREE_BLOCK_MAP_BLOCK_NUM, bbit_map), BLOCK_SIZE);
 
     // find_free() to locate a free block
     int bnum = find_free(bbit_map);
