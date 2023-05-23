@@ -2,6 +2,7 @@
 #include "block.h"   // for BLOCK_SIZE macro (thought it would be better than defining it separately)
 
 
+
 /* Finds the lowest clear (not-set, zero) bit in a byte */
 
 int find_low_clear_bit(unsigned char x){

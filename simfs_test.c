@@ -6,7 +6,6 @@
 #include "mkfs.h"
 
 
-
 void test_image_open(void) {
 
     int image_fd1 = image_open("image1", 1);
@@ -15,6 +14,11 @@ void test_image_open(void) {
     CTEST_ASSERT(image_fd2 != image_fd1, "opening a second image does not have the same file descriptor");
     
 }
+
+
+//  OTHER PROJECT 5 TESTS HERE   ////////////////////////////////////////////////////////////////////////
+
+
 
 
 
