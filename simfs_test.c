@@ -17,7 +17,6 @@ void test_image_open(void) {
 
     int image_fd3 = image_open("/image3", 1);
     CTEST_ASSERT(image_fd3 == -1, "creating a file in the root directory");
-    
 }
 
 
@@ -31,7 +30,6 @@ void test_image_close(void) {
 
     image_fd = -1; // invalid file descriptor
     CTEST_ASSERT(image_close() == -1, "closing an image file with file descriptor -1 fails");
-
 }
 
 

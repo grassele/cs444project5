@@ -33,5 +33,6 @@ int image_open(char *filename, int truncate) {
 /* Closes the image file using the global image file descriptor */
 
 int image_close(void) {
+    
     return close(image_fd);
 }
