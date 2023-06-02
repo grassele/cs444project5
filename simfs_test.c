@@ -49,11 +49,21 @@ void test_bread_and_bwrite(void) {
     unsigned char test_block_read_out[BLOCK_SIZE];
     bread(test_block_num, test_block_read_out);
     CTEST_ASSERT(memcmp(test_block_write_in, test_block_read_out, BLOCK_SIZE) == 0, "bwrite successfully writes and bread successfully reads");
-
 }
 
 
 /////  free.c tests  //////////////////////////////////////////////////////////////////////////////
+
+
+void test_set_and_find_free(void) {
+
+    unsigned char *block_for_block_map[BLOCK_SIZE];
+    bread(FREE_BLOCK_MAP_BLOCK_NUM, (unsigned char *)block_for_block_map);
+    CTEST_ASSERT(find_free((unsigned char *)block_for_block_map) == 0, "first free block before any setting is block 0");
+
+    set_free((unsigned char *)block_for_block_map, 0, 1);
+    CTEST_ASSERT(find_free((unsigned char *)block_for_block_map) == 1, "first free block after setting 0 block is 1");
+}
 
 
 /////  inode.c tests  /////////////////////////////////////////////////////////////////////////////
@@ -65,9 +75,10 @@ void test_bread_and_bwrite(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-// Assuming that all test functions have been run and all need their leftover image files deleted
+/* Assuming that all test functions have been run and all need their leftover image files deleted */
+
 void delete_test_image_files(void) {
-    
+
     remove("image1");
     remove("image2");
     remove("image_to_close");
@@ -82,6 +93,7 @@ int main(void) {
     test_image_open();
     test_image_close();
     test_bread_and_bwrite();
+    test_set_and_find_free();
 
     delete_test_image_files();
 
