@@ -26,8 +26,6 @@ void bwrite(int block_num, unsigned char *block) {
     size_t block_offset = block_num * BLOCK_SIZE;
     lseek(image_fd, block_offset, SEEK_SET);
     write(image_fd, block, BLOCK_SIZE);
-    
-    // should there be a return here?
 }
 
 

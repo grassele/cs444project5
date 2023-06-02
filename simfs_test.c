@@ -5,6 +5,10 @@
 #include "free.h"
 #include "mkfs.h"
 #include <fcntl.h>
+#include <string.h>   // memcmp()
+
+
+/////  image.c tests  /////////////////////////////////////////////////////////////////////////////
 
 
 void test_image_open(void) {
@@ -33,8 +37,32 @@ void test_image_close(void) {
 }
 
 
+/////  block.c tests  /////////////////////////////////////////////////////////////////////////////
 
 
+void test_bread_and_bwrite(void) {
+
+    image_open("new_image", 1);
+    unsigned char test_block_write_in[] = "test_block_contents";
+    int test_block_num = 13;
+    bwrite(test_block_num, test_block_write_in);
+    unsigned char test_block_read_out[BLOCK_SIZE];
+    bread(test_block_num, test_block_read_out);
+    CTEST_ASSERT(memcmp(test_block_write_in, test_block_read_out, BLOCK_SIZE) == 0, "bwrite successfully writes and bread successfully reads");
+
+}
+
+
+/////  free.c tests  //////////////////////////////////////////////////////////////////////////////
+
+
+/////  inode.c tests  /////////////////////////////////////////////////////////////////////////////
+
+
+/////  mkfs.c tests  //////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int main(void) {
@@ -43,6 +71,7 @@ int main(void) {
 
     test_image_open();
     test_image_close();
+    test_bread_and_bwrite();
 
     CTEST_RESULTS();
 
