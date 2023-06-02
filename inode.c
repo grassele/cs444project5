@@ -27,8 +27,9 @@ int ialloc(void) {
     else {
         // Mark block bit as non-free
         set_free(ibit_map, inum, 1);
-        //Save the inode back out to disk - save inode or bit map?
+        // Save the inode back out to disk - save inode or bit map?
         bwrite(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
+        return inum;
     }
 }
 

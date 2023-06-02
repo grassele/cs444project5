@@ -51,6 +51,12 @@ void test_bread_and_bwrite(void) {
     CTEST_ASSERT(memcmp(test_block_write_in, test_block_read_out, BLOCK_SIZE) == 0, "bwrite successfully writes and bread successfully reads");
 }
 
+/* similar functionality to ialloc in inode.c; updates should be to both functions */
+
+void test_alloc(void) {
+    ;
+}
+
 
 /////  free.c tests  //////////////////////////////////////////////////////////////////////////////
 
@@ -73,6 +79,18 @@ void test_set_and_find_free(void) {
 
 
 /////  inode.c tests  /////////////////////////////////////////////////////////////////////////////
+
+
+/* similar functionality to alloc in block.c; updates should be to both functions */
+
+void test_ialloc(void) {
+
+    // do we need to reset anything here so that the tests won't break?
+
+    // returns num of the newly allocated inode (num >= 0)
+    // find_free now returns greater or equal to 1
+    // returns -1 if all inodes are full
+}
 
 
 /////  mkfs.c tests  //////////////////////////////////////////////////////////////////////////////
@@ -100,6 +118,7 @@ int main(void) {
     test_image_close();
     test_bread_and_bwrite();
     test_set_and_find_free();
+    test_ialloc();
 
     delete_test_image_files();
 
