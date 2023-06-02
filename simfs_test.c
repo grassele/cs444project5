@@ -63,6 +63,12 @@ void test_set_and_find_free(void) {
 
     set_free((unsigned char *)block_for_block_map, 0, 1);
     CTEST_ASSERT(find_free((unsigned char *)block_for_block_map) == 1, "first free block after setting 0 block is 1");
+
+    unsigned char *fake_full_bit_map[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE * 8; i++) {
+        set_free((unsigned char *)fake_full_bit_map, i, 1);
+    }
+    CTEST_ASSERT(find_free((unsigned char *)fake_full_bit_map) == -1, "returns -1 when bit map is full");
 }
 
 
