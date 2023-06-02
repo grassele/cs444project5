@@ -65,6 +65,16 @@ void test_bread_and_bwrite(void) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+// Assuming that all test functions have been run and all need their leftover image files deleted
+void delete_test_image_files(void) {
+    
+    remove("image1");
+    remove("image2");
+    remove("image_to_close");
+    remove("new_image");
+}
+
+
 int main(void) {
 
     CTEST_VERBOSE(1);
@@ -72,6 +82,8 @@ int main(void) {
     test_image_open();
     test_image_close();
     test_bread_and_bwrite();
+
+    delete_test_image_files();
 
     CTEST_RESULTS();
 
