@@ -4,6 +4,7 @@
 #define BLOCK_SIZE 4096
 #define FREE_INODE_MAP_BLOCK_NUM 1
 #define FREE_BLOCK_MAP_BLOCK_NUM 2
+#define NUM_BLOCKS_IN_FILE_SYS 1024
 
 unsigned char *bread(int block_num, unsigned char *block);
 void bwrite(int block_num, unsigned char *block);

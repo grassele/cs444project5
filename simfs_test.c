@@ -3,6 +3,7 @@
 #include "image.h"
 #include "block.h"
 #include "free.h"
+#include "inode.h"
 #include "mkfs.h"
 #include <fcntl.h>
 #include <string.h>   // memcmp()
@@ -42,19 +43,46 @@ void test_image_close(void) {
 
 void test_bread_and_bwrite(void) {
 
-    image_open("new_image", 1);
+    image_open("test_image", 1);
+
     unsigned char test_block_write_in[] = "test_block_contents";
     int test_block_num = 13;
     bwrite(test_block_num, test_block_write_in);
     unsigned char test_block_read_out[BLOCK_SIZE];
     bread(test_block_num, test_block_read_out);
     CTEST_ASSERT(memcmp(test_block_write_in, test_block_read_out, BLOCK_SIZE) == 0, "bwrite successfully writes and bread successfully reads");
+    
+    // reset image
+    image_close();
 }
 
-/* similar functionality to ialloc in inode.c; updates should be to both functions */
+
+/* Similar functionality to ialloc in inode.c; updates should be to both functions */
 
 void test_alloc(void) {
-    ;
+
+    image_open("test_image", 1);
+
+    unsigned char ta_free_block_bit_map[BLOCK_SIZE];
+    bread(FREE_BLOCK_MAP_BLOCK_NUM, ta_free_block_bit_map);
+    int first_free_before_alloc = find_free(ta_free_block_bit_map);
+    int allocated_block = alloc();
+    CTEST_ASSERT(allocated_block >= 0 && allocated_block < NUM_BLOCKS_IN_FILE_SYS, "block num returned is contained in the bit array");
+
+    CTEST_ASSERT(first_free_before_alloc == allocated_block, "block allocated by alloc is the first free block");
+
+    int first_free_after_alloc = find_free(bread(FREE_BLOCK_MAP_BLOCK_NUM, ta_free_block_bit_map));
+    CTEST_ASSERT(first_free_after_alloc != first_free_before_alloc, "alloc takes the first free block, making it no longer the first free block");
+
+    unsigned char ta_fake_full_bit_map[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE * 8; i++) {
+        set_free(ta_fake_full_bit_map, i, 1);
+    }
+    bwrite(FREE_BLOCK_MAP_BLOCK_NUM, ta_fake_full_bit_map);
+    CTEST_ASSERT(alloc() == -1, "alloc returns -1 when free block bit map is full");
+
+    // reset image
+    image_close();
 }
 
 
@@ -63,33 +91,55 @@ void test_alloc(void) {
 
 void test_set_and_find_free(void) {
 
-    unsigned char *block_for_block_map[BLOCK_SIZE];
-    bread(FREE_BLOCK_MAP_BLOCK_NUM, (unsigned char *)block_for_block_map);
-    CTEST_ASSERT(find_free((unsigned char *)block_for_block_map) == 0, "first free block before any setting is block 0");
+    image_open("test_image", 1);
 
-    set_free((unsigned char *)block_for_block_map, 0, 1);
-    CTEST_ASSERT(find_free((unsigned char *)block_for_block_map) == 1, "first free block after setting 0 block is 1");
+    unsigned char tsff_free_block_bit_map[BLOCK_SIZE];
+    bread(FREE_BLOCK_MAP_BLOCK_NUM, tsff_free_block_bit_map);
+    CTEST_ASSERT(find_free(tsff_free_block_bit_map) == 0, "first free block before any setting is block 0");
 
-    unsigned char *fake_full_bit_map[BLOCK_SIZE];
+    set_free(tsff_free_block_bit_map, 0, 1);
+    CTEST_ASSERT(find_free(tsff_free_block_bit_map) == 1, "first free block after setting 0 block is 1");
+
+    unsigned char tsff_fake_full_bit_map[BLOCK_SIZE];
     for (int i = 0; i < BLOCK_SIZE * 8; i++) {
-        set_free((unsigned char *)fake_full_bit_map, i, 1);
+        set_free(tsff_fake_full_bit_map, i, 1);
     }
-    CTEST_ASSERT(find_free((unsigned char *)fake_full_bit_map) == -1, "returns -1 when bit map is full");
+    CTEST_ASSERT(find_free(tsff_fake_full_bit_map) == -1, "returns -1 when bit map is full");
+
+    // reset image
+    image_close();
 }
 
 
 /////  inode.c tests  /////////////////////////////////////////////////////////////////////////////
 
 
-/* similar functionality to alloc in block.c; updates should be to both functions */
+/* Similar functionality to alloc in block.c; updates should be to both functions */
 
 void test_ialloc(void) {
 
-    // do we need to reset anything here so that the tests won't break?
+    image_open("test_image", 1);
 
-    // returns num of the newly allocated inode (num >= 0)
-    // find_free now returns greater or equal to 1
-    // returns -1 if all inodes are full
+    unsigned char ti_free_inode_bit_map[BLOCK_SIZE];
+    bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
+    int first_free_before_ialloc = find_free(ti_free_inode_bit_map);
+    int allocated_inode = ialloc();
+    CTEST_ASSERT(allocated_inode >= 0 && allocated_inode < MAX_NUM_INODES, "inode num returned is contained in the bit array");
+
+    CTEST_ASSERT(first_free_before_ialloc == allocated_inode, "inode allocated by ialloc is the first free inode");
+
+    int first_free_after_ialloc = find_free(bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map));
+    CTEST_ASSERT(first_free_after_ialloc != first_free_before_ialloc, "ialloc takes the first free inode, making it no longer the first free inode");
+
+    unsigned char ti_fake_full_bit_map[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE * 8; i++) {
+        set_free(ti_fake_full_bit_map, i, 1);
+    }
+    bwrite(FREE_INODE_MAP_BLOCK_NUM, ti_fake_full_bit_map);
+    CTEST_ASSERT(ialloc() == -1, "ialloc returns -1 when free inode bit map is full");
+
+    // reset image
+    image_close();
 }
 
 
@@ -106,7 +156,7 @@ void delete_test_image_files(void) {
     remove("image1");
     remove("image2");
     remove("image_to_close");
-    remove("new_image");
+    remove("test_image");
 }
 
 
@@ -117,6 +167,7 @@ int main(void) {
     test_image_open();
     test_image_close();
     test_bread_and_bwrite();
+    test_alloc();
     test_set_and_find_free();
     test_ialloc();
 

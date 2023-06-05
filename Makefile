@@ -12,7 +12,7 @@ test: simfs_test
 
 # Build the object files into a static library called simfs.a
 
-simfs.a: block.o free.o image.o mkfs.o
+simfs.a: block.o free.o image.o inode.o mkfs.o
 	ar rcs $@ $^
 
 
@@ -26,6 +26,9 @@ free.o: free.c block.o
 	gcc -Wall -Wextra -c -o $@ $<
 
 image.o: image.c
+	gcc -Wall -Wextra -c -o $@ $<
+
+inode.o: inode.c
 	gcc -Wall -Wextra -c -o $@ $<
 
 mkfs.o: mkfs.c block.o
