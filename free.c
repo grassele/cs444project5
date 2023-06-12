@@ -1,5 +1,6 @@
 #include "free.h"
 #include "block.h"   // for BLOCK_SIZE macro (thought it would be better than defining it separately)
+#include <stdio.h>
 
 
 
@@ -22,9 +23,9 @@ void set_free(unsigned char *block, int num, int set) {   // not sure if we want
     int bit_num = num % 8;
 
     if (set == 0) {
-        block[byte_num] &= ~(!set << bit_num);
+        block[byte_num] &= ~(1 << bit_num);
     } 
-    else {
+    else if (set == 1) {
         block[byte_num] |= set << bit_num;
     }
 }
@@ -39,7 +40,7 @@ int find_free(unsigned char *block) {
     for (int i = 0; i < BLOCK_SIZE; i++) {  // do we need to go through all 4096 bytes? or we don't for inode map but do for block?
         int bit_num = find_low_clear_bit(block[i]);
         if (bit_num != -1) {
-            return (i * BLOCK_SIZE) + bit_num;
+            return (i * 8) + bit_num;  // 8 is size of a byte
         }
     }
     return -1;

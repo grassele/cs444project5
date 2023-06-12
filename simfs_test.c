@@ -62,6 +62,7 @@ void test_bread_and_bwrite(void) {
 void test_alloc(void) {
 
     image_open("test_image", 1);
+    mkfs();
 
     unsigned char ta_free_block_bit_map[BLOCK_SIZE];
     bread(FREE_BLOCK_MAP_BLOCK_NUM, ta_free_block_bit_map);
@@ -92,13 +93,16 @@ void test_alloc(void) {
 void test_set_and_find_free(void) {
 
     image_open("test_image", 1);
+    mkfs();
 
     unsigned char tsff_free_block_bit_map[BLOCK_SIZE];
     bread(FREE_BLOCK_MAP_BLOCK_NUM, tsff_free_block_bit_map);
-    CTEST_ASSERT(find_free(tsff_free_block_bit_map) == 0, "first free block before any setting is block 0");
+    int first_free_before_set = find_free(tsff_free_block_bit_map);
+    CTEST_ASSERT(first_free_before_set == NUM_PRECLAIMED_BLOCKS, "first free block before any setting is block 7"); // 0-6 are allocated by mkfs()
 
-    set_free(tsff_free_block_bit_map, 0, 1);
-    CTEST_ASSERT(find_free(tsff_free_block_bit_map) == 1, "first free block after setting 0 block is 1");
+    set_free(tsff_free_block_bit_map, NUM_PRECLAIMED_BLOCKS, 1);
+    int first_free_after_set = find_free(tsff_free_block_bit_map);
+    CTEST_ASSERT(first_free_after_set == NUM_PRECLAIMED_BLOCKS + 1, "first free block after setting 1 block is 8");
 
     unsigned char tsff_fake_full_bit_map[BLOCK_SIZE];
     for (int i = 0; i < BLOCK_SIZE * 8; i++) {
@@ -119,6 +123,7 @@ void test_set_and_find_free(void) {
 void test_ialloc(void) {
 
     image_open("test_image", 1);
+    mkfs();
 
     unsigned char ti_free_inode_bit_map[BLOCK_SIZE];
     bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
@@ -146,6 +151,26 @@ void test_ialloc(void) {
 /////  mkfs.c tests  //////////////////////////////////////////////////////////////////////////////
 
 
+void test_mkfs(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+
+    unsigned char tmkfs_random_block[BLOCK_SIZE];
+    int random_block_not_preclaimed = NUM_PRECLAIMED_BLOCKS + rand() % (1024-NUM_PRECLAIMED_BLOCKS);
+    bread(random_block_not_preclaimed, tmkfs_random_block);
+    int random_byte_in_block = rand() % BLOCK_SIZE;
+    CTEST_ASSERT(tmkfs_random_block[random_byte_in_block] == 0, "a random byte from a random block is zeroed (mkfs properly zeroes)");
+
+    unsigned char tmkfs_block_bit_map[BLOCK_SIZE];
+    bread(FREE_BLOCK_MAP_BLOCK_NUM, tmkfs_block_bit_map);
+    CTEST_ASSERT(find_free(tmkfs_block_bit_map) == NUM_PRECLAIMED_BLOCKS, "first free block after mkfs() is 7");
+
+    // reset image
+    image_close();
+}
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -170,6 +195,7 @@ int main(void) {
     test_alloc();
     test_set_and_find_free();
     test_ialloc();
+    test_mkfs();
 
     delete_test_image_files();
 
