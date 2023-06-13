@@ -23,27 +23,57 @@ void reinitialize_incore(void) {
 
 
 
-/* Allocate a previously-free inode in the inode map */
+/* Allocate a previously-free inode in the inode map, and return a pointer to the inode loaded into incore */
 
-int ialloc(void) {
+struct inode *ialloc(void) {
 
-    // Find the lowest free inode in the bit map, mark it allocated, and return number or -1 if no free inodes
-
-    // Get inode map
+    // Get free inode bit map
     unsigned char ibit_map[BLOCK_SIZE];
     bread(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
 
-    // Locate a free inode
-    int inum = find_free(ibit_map);
-    if (inum == -1) {  // no free inode found in bit map
-        return -1;
+    // Locate a free inode in the map
+    int inode_num = find_free(ibit_map);
+
+    // If no free inode found in bit map, return NULL
+    if (inode_num == -1) {
+        return NULL;
     }
+
+    // If free inode was found
     else {
+
         // Mark block bit as non-free
-        set_free(ibit_map, inum, 1);
+        set_free(ibit_map, inode_num, 1);
+
         // Save the inode back out to disk - save inode or bit map?
         bwrite(FREE_INODE_MAP_BLOCK_NUM, ibit_map);
-        return inum;
+    }
+
+    // Find incore inode to initialize inode data
+    struct inode *incore_inode = iget(inode_num);
+
+    // If no free incore inode was found, return NULL
+    if (incore_inode == NULL) {
+        return NULL;
+    }
+
+    // If free incore inode was found
+    else {
+
+        // Initialize the incore inode
+        incore_inode->size = 0;
+        incore_inode->owner_id = 0;
+        incore_inode->permissions = 0;
+        incore_inode->flags = 0;
+        for (int i = 0; i < INODE_PTR_COUNT; i++) {
+            incore_inode->block_ptr[i] = 0;
+        }
+        incore_inode->inode_num = inode_num;
+
+        // Write the initialized data back to disk
+        write_inode(incore_inode);
+
+        return incore_inode;
     }
 }
 
@@ -162,4 +192,43 @@ void write_inode(struct inode *in) {
 
     lseek(image_fd, total_offset_bytes, SEEK_SET);
     write(image_fd, block, INODE_SIZE);
+}
+
+
+
+/* Get an incore inode for a specific disk inode, either by finding it already in the incore array or loading it in from disk */
+
+struct inode *iget(int inode_num) {
+
+    struct inode *found_incore = find_incore(inode_num);
+    if (found_incore != NULL) {
+        found_incore->ref_count += 1;
+        return found_incore;
+    }
+    else {
+        struct inode *new_inode = find_incore_free();
+
+        // if there are no more available incore inodes
+        if (new_inode == NULL) {
+            return NULL;
+        }
+        read_inode(new_inode, inode_num);
+        new_inode->ref_count = 1;
+        return new_inode;
+    }
+}
+
+
+
+/* Allow the current incore inode to be put back on disk if no one else is using it, effectively freeing up space for a needed disk inode */
+
+void iput(struct inode *in) {
+
+    if (in->ref_count == 0) {
+        return;
+    }
+    in->ref_count -= 1;
+    if (in->ref_count == 0) {
+        write_inode(in);
+    }
 }

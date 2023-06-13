@@ -118,34 +118,82 @@ void test_set_and_find_free(void) {
 /////  inode.c tests  /////////////////////////////////////////////////////////////////////////////
 
 
-/* Similar functionality to alloc in block.c; updates should be to both functions */
+/* Project 5 ialloc implementation */
+
+void test_ialloc_old_functionality(void) {
+
+    // image_open("test_image", 1);
+    // mkfs();
+
+    // unsigned char ti_free_inode_bit_map[BLOCK_SIZE];
+    // bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
+    // int first_free_before_ialloc = find_free(ti_free_inode_bit_map);
+    // int allocated_inode = ialloc();
+    // CTEST_ASSERT(allocated_inode >= 0 && allocated_inode < MAX_NUM_INODES, "inode num returned is contained in the bit array");
+
+    // CTEST_ASSERT(first_free_before_ialloc == allocated_inode, "inode allocated by ialloc is the first free inode");
+
+    // int first_free_after_ialloc = find_free(bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map));
+    // CTEST_ASSERT(first_free_after_ialloc != first_free_before_ialloc, "ialloc takes the first free inode, making it no longer the first free inode");
+
+    // unsigned char ti_fake_full_bit_map[BLOCK_SIZE];
+    // for (int i = 0; i < BLOCK_SIZE * 8; i++) {
+    //     set_free(ti_fake_full_bit_map, i, 1);
+    // }
+    // bwrite(FREE_INODE_MAP_BLOCK_NUM, ti_fake_full_bit_map);
+    // CTEST_ASSERT(ialloc() == -1, "ialloc returns -1 when free inode bit map is full");
+
+    // // reset image
+    // image_close();
+}
+
+
+
+/* Project 6 ialloc implementation */
 
 void test_ialloc(void) {
 
     image_open("test_image", 1);
     mkfs();
+    reinitialize_incore();
 
+    // the incore inode returned by ialloc has the inode num of the first available inode before ialloc
     unsigned char ti_free_inode_bit_map[BLOCK_SIZE];
     bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
-    int first_free_before_ialloc = find_free(ti_free_inode_bit_map);
-    int allocated_inode = ialloc();
-    CTEST_ASSERT(allocated_inode >= 0 && allocated_inode < MAX_NUM_INODES, "inode num returned is contained in the bit array");
+    int ti_first_free_before_ialloc = find_free(ti_free_inode_bit_map);
+    struct inode *ti_new_incore_inode = ialloc();
+    CTEST_ASSERT(ti_first_free_before_ialloc == (int)ti_new_incore_inode->inode_num, "returns incore inode with inode num of the first available inode before ialloc");
 
-    CTEST_ASSERT(first_free_before_ialloc == allocated_inode, "inode allocated by ialloc is the first free inode");
+    // the new next free inode is different than it was before ialloc
+    bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
+    int ti_first_free_after_ialloc = find_free(ti_free_inode_bit_map);
+    CTEST_ASSERT(ti_first_free_before_ialloc != ti_first_free_after_ialloc, "the first free inode is different after ialloc");
 
-    int first_free_after_ialloc = find_free(bread(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map));
-    CTEST_ASSERT(first_free_after_ialloc != first_free_before_ialloc, "ialloc takes the first free inode, making it no longer the first free inode");
-
-    unsigned char ti_fake_full_bit_map[BLOCK_SIZE];
-    for (int i = 0; i < BLOCK_SIZE * 8; i++) {
-        set_free(ti_fake_full_bit_map, i, 1);
+    // returns null if all incore inodes are in use
+    reinitialize_incore();
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {  // sets the first 64 inodes to 'in-use'
+        set_free(ti_free_inode_bit_map, i, 1);
     }
-    bwrite(FREE_INODE_MAP_BLOCK_NUM, ti_fake_full_bit_map);
-    CTEST_ASSERT(ialloc() == -1, "ialloc returns -1 when free inode bit map is full");
+    bwrite(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {  // loads the 64 inodes into the 64 incore inodes 
+        iget(i);
+    }
+    struct inode *ti_when_all_incore_full = ialloc();
+    CTEST_ASSERT(ti_when_all_incore_full == NULL, "returns null if all incore inodes are being used");
+    
+    // returns null if no disk inodes are free
+    reinitialize_incore();
+    for (int i = MAX_SYS_OPEN_FILES; i < BLOCK_SIZE * 8; i++) {  // set the rest of the inodes to 'in-use'
+        set_free(ti_free_inode_bit_map, i, 1);
+    }
+    bwrite(FREE_INODE_MAP_BLOCK_NUM, ti_free_inode_bit_map);
+    struct inode *ti_when_all_bit_map_full = ialloc();
+    CTEST_ASSERT(ti_when_all_bit_map_full == NULL, "returns null if all inodes in the free inode bit map are already marked as allocated");
 
     // reset image
     image_close();
 }
+
 
 
 void test_find_incore_free(void) {
@@ -162,7 +210,6 @@ void test_find_incore_free(void) {
         read_inode(find_incore_free(), i);
         tfif_incore_inode2->ref_count += 1;
     }
-
     CTEST_ASSERT(find_incore_free() == NULL, "returns null when all incore inodes are being used");
 
     // reset image
@@ -179,7 +226,6 @@ void test_find_incore(void) {
     // returns an in-core inode with the inode_num matching the specified inode number
     for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {
         struct inode *tfi_incore_inode = find_incore_free();
-        // printf("%s\n", tfi_incore_inode);
         read_inode(tfi_incore_inode, i);
         tfi_incore_inode->ref_count += 1;
     }
@@ -236,6 +282,54 @@ void test_write_inode(void) {
 }
 
 
+void test_iget(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    int tig_random_inode_num = rand()%MAX_NUM_INODES;
+    struct inode *result_before_iget = find_incore(tig_random_inode_num);
+    struct inode *result_from_first_iget = iget(tig_random_inode_num);
+    struct inode *result_after_iget = find_incore(tig_random_inode_num);
+    CTEST_ASSERT(result_before_iget == NULL && (int)result_after_iget->inode_num == tig_random_inode_num, "inode num not found in incore array before iget is found after iget");
+
+    struct inode *result_from_second_iget = iget(tig_random_inode_num);
+    CTEST_ASSERT(result_from_first_iget == result_from_second_iget, "returns the same incore inode for the inode num as when it first loaded it in");
+
+    reinitialize_incore();
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {
+        iget(i);
+    }
+    int next_inode_num = MAX_SYS_OPEN_FILES;
+    CTEST_ASSERT(iget(next_inode_num) == NULL, "returns null if all incore inodes are being used for other inode nums");
+
+    // reset image
+    image_close();
+}
+
+
+void test_iput(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    int tip_random_inode_num = rand()% MAX_NUM_INODES;
+    struct inode *tip_inode = iget(tip_random_inode_num);
+    struct inode *result_before_iput = find_incore(tip_random_inode_num);
+    iput(tip_inode);
+    struct inode *result_after_iput = find_incore(tip_random_inode_num);
+    CTEST_ASSERT((int)result_before_iput->inode_num == tip_random_inode_num && result_after_iput == NULL, "inode number found in incore array before iput is not found in incore array after iput");
+    
+    // was going to also check if trying to iput an already written incore inode just succeeds, but couldn't figure out how to do that with the void function
+    // CTEST_ASSERT(iput(tip_inode) != -1, "trying to iput an inode not in incore just doesn't do anything");  // can't check void against int
+
+    // reset image
+    image_close();
+}
+
+
 /////  mkfs.c tests  //////////////////////////////////////////////////////////////////////////////
 
 
@@ -283,7 +377,6 @@ int main(void) {
     test_bread_and_bwrite();
     test_alloc();
     test_set_and_find_free();
-    test_ialloc();
     test_mkfs();
 
     // added for project 6
@@ -291,6 +384,9 @@ int main(void) {
     test_find_incore();
     test_read_inode();
     test_write_inode();
+    test_iget();
+    test_iput();
+    test_ialloc();
 
     delete_test_image_files();
 
