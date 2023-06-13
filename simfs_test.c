@@ -148,6 +148,94 @@ void test_ialloc(void) {
 }
 
 
+void test_find_incore_free(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    struct inode *tfif_incore_inode = find_incore_free();
+    CTEST_ASSERT(tfif_incore_inode->ref_count == 0, "incore inode returned has a ref_count of 0");
+
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {
+        struct inode *tfif_incore_inode2 = find_incore_free();
+        read_inode(find_incore_free(), i);
+        tfif_incore_inode2->ref_count += 1;
+    }
+
+    CTEST_ASSERT(find_incore_free() == NULL, "returns null when all incore inodes are being used");
+
+    // reset image
+    image_close();
+}
+
+
+void test_find_incore(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    // returns an in-core inode with the inode_num matching the specified inode number
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {
+        struct inode *tfi_incore_inode = find_incore_free();
+        // printf("%s\n", tfi_incore_inode);
+        read_inode(tfi_incore_inode, i);
+        tfi_incore_inode->ref_count += 1;
+    }
+    int tfi_random_inode_num = rand()%MAX_SYS_OPEN_FILES;
+    CTEST_ASSERT((int)find_incore(tfi_random_inode_num)->inode_num == tfi_random_inode_num, "incore inode returned has inode_num matching the specified inode number");
+
+    // returns null if inode is not loaded as an in-core inode
+    int inode_num_not_in_incore = MAX_SYS_OPEN_FILES;
+    CTEST_ASSERT(find_incore(inode_num_not_in_incore) == NULL, "returns null when inode num does not exist in incore array");
+
+    // reset image
+    image_close();
+}
+
+
+void test_read_inode(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    // inode num is not found before it is read into incore array, and is found afterward
+    int tri_random_inode_num = rand()%MAX_NUM_INODES;
+    void *result_before_read = find_incore(tri_random_inode_num);
+    struct inode *tri_incore_inode = find_incore_free();
+    read_inode(tri_incore_inode, tri_random_inode_num);
+    tri_incore_inode->ref_count += 1;
+    CTEST_ASSERT(result_before_read == NULL && (int)tri_incore_inode->inode_num == tri_random_inode_num, "an inode num is not found before it is read into incore array, but found afterward");
+
+    // reset image
+    image_close();
+}
+
+
+void test_write_inode(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    int twi_random_inode_num = rand()%MAX_NUM_INODES;
+    struct inode *twi_incore_inode = find_incore_free();
+    read_inode(twi_incore_inode, twi_random_inode_num);
+    twi_incore_inode->ref_count += 1;
+    int twi_random_size = rand()%UNINCLUSIVE_MAX_INT_W_4_BYTES;
+    twi_incore_inode->size = twi_random_size;
+    write_inode(twi_incore_inode);
+    struct inode *twi_incore_inode2 = find_incore_free();
+    read_inode(twi_incore_inode2, twi_random_inode_num);
+    CTEST_ASSERT((int)twi_incore_inode2->size == twi_random_size, "write inode saves retrievable data to disk");
+
+    // reset image
+    image_close();
+}
+
+
 /////  mkfs.c tests  //////////////////////////////////////////////////////////////////////////////
 
 
@@ -189,6 +277,7 @@ int main(void) {
 
     CTEST_VERBOSE(1);
 
+    // added for project 5
     test_image_open();
     test_image_close();
     test_bread_and_bwrite();
@@ -196,6 +285,12 @@ int main(void) {
     test_set_and_find_free();
     test_ialloc();
     test_mkfs();
+
+    // added for project 6
+    test_find_incore_free();
+    test_find_incore();
+    test_read_inode();
+    test_write_inode();
 
     delete_test_image_files();
 

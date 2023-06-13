@@ -21,7 +21,8 @@ void mkfs(void) {
     // (2) Mark data blocks 0-6 as allocated by calling alloc() 7 times.
 
     for (int i = 0; i < NUM_PRECLAIMED_BLOCKS; i++){
-        printf("block num allocated in mkfs function: %d\n", alloc());  // ELIZABETH REMOVE PRINT PART, LEAVE JUST ALLOC
+        alloc();
+        // printf("block num allocated in mkfs function: %d\n", alloc());  // ELIZABETH REMOVE PRINT PART, LEAVE JUST ALLOC
     }
 
     // (3) (not part of project 5) Add the root directory and other things needed to bootstrap the file system.

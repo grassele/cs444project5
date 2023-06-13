@@ -12,6 +12,9 @@
 
 #define MAX_SYS_OPEN_FILES 64
 
+#define UNINCLUSIVE_MAX_INT_W_4_BYTES 4294967296
+
+
 struct inode {
     unsigned int size;
     unsigned short owner_id;
@@ -23,6 +26,8 @@ struct inode {
     unsigned int ref_count;  // in-core only
     unsigned int inode_num;
 };
+
+void reinitialize_incore(void);  // added for project 6
 
 int ialloc(void);
 
