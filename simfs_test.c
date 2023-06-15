@@ -21,7 +21,7 @@ void test_image_open(void) {
     CTEST_ASSERT(image_fd2 != image_fd1, "opening a second image does not have the same file descriptor");
 
     int image_fd3 = image_open("/image3", 1);
-    CTEST_ASSERT(image_fd3 == -1, "creating a file in the root directory");
+    CTEST_ASSERT(image_fd3 == -1, "creating a file in the root directory fails");
 }
 
 
@@ -45,11 +45,14 @@ void test_bread_and_bwrite(void) {
 
     image_open("test_image", 1);
 
-    unsigned char test_block_write_in[] = "test_block_contents";
+    unsigned char test_block_write_in[BLOCK_SIZE] = {0};
+    strcpy((char*)&test_block_write_in, "test_block_contents");
     int test_block_num = 13;
     bwrite(test_block_num, test_block_write_in);
     unsigned char test_block_read_out[BLOCK_SIZE];
     bread(test_block_num, test_block_read_out);
+    printf("test write in: %s\n", test_block_write_in);
+    printf("test read out: %s\n", test_block_read_out);
     CTEST_ASSERT(memcmp(test_block_write_in, test_block_read_out, BLOCK_SIZE) == 0, "bwrite successfully writes and bread successfully reads");
     
     // reset image

@@ -123,31 +123,26 @@ void read_inode(struct inode *in, int inode_num) {
     // go through block, reading one little section at a time, and writing into the fields of the struct
 
     // in an inode, the size is stored at byte 0 and is 4 bytes long
-    void *file_size = (void *)&block[0];
-    in->size = read_u32(file_size);
+    in->size = read_u32(block + 0);
 
     // owner_id is at byte 4 and is 2 bytes long
-    void *owner_id = (void *)&block[4];
-    in->owner_id = read_u16(owner_id);
+    in->owner_id = read_u16(block + 4);
 
     // permissions is at byte 6 and is 1 byte long
-    void *permissions = (void *)&block[6];
-    in->permissions = read_u8(permissions);
+    in->permissions = read_u8(block + 6);
 
     // flags is at byte 7 and is 1 byte long
-    void *flags = (void *)&block[7];
-    in->flags = read_u8(flags);
+    in->flags = read_u8(block + 7);
 
     // link_count is at byte 8 and is 1 byte long
-    void *link_count = (void *)&block[8];
-    in->link_count = read_u8(link_count);
+    in->link_count = read_u8(block + 8);
 
     // the block_ptr array is at byte 9 and is 32 bytes long (INODE_PTR_COUNT = 16, 1 * 2 = 32)
     for (int i = 0; i < INODE_PTR_COUNT; i++) {
-        in->block_ptr[i] = read_u16((void *)&block[9+(2*i)]);  // block[9] is the location of the beginning of the array of block pointers
+        in->block_ptr[i] = read_u16(block + 9 + (2*i));  // block[9] is the location of the beginning of the array of block pointers
     }
 
-    // initialize ref_count to 1
+    // initialize ref_count to 0
     in->ref_count = 0;
 
     // set inode_num field to inode_num
