@@ -390,15 +390,15 @@ void test_directory_get(void) {
     mkfs();
     reinitialize_incore();
 
-    struct directory *tdo_directory = directory_open(0);
-    struct directory_entry tdo_entry;
-    directory_get(tdo_directory, &tdo_entry);
-    CTEST_ASSERT(strcmp(tdo_entry.name, ".") == 0, "first directory get on root directory inode has name . for current directory");
-    CTEST_ASSERT(tdo_entry.inode_num == 0, "first directory get, the current directory entry, points to inode 0");
+    struct directory *tdg_directory = directory_open(0);
+    struct directory_entry tdg_entry;
+    directory_get(tdg_directory, &tdg_entry);
+    CTEST_ASSERT(strcmp(tdg_entry.name, ".") == 0, "first directory get on root directory inode has name . for current directory");
+    CTEST_ASSERT(tdg_entry.inode_num == 0, "first directory get, the current directory entry, points to inode 0");
     
-    directory_get(tdo_directory, &tdo_entry);
-    CTEST_ASSERT(strcmp(tdo_entry.name, "..") == 0, "second directory get on root directory inode has name .. for parent directory");
-    CTEST_ASSERT(tdo_entry.inode_num == 0, "first directory get, the parent directory entry, points to inode 0 as well");
+    directory_get(tdg_directory, &tdg_entry);
+    CTEST_ASSERT(strcmp(tdg_entry.name, "..") == 0, "second directory get on root directory inode has name .. for parent directory");
+    CTEST_ASSERT(tdg_entry.inode_num == 0, "first directory get, the parent directory entry, points to inode 0 as well");
 
     // reset image
     image_close();
@@ -411,7 +411,12 @@ void test_directory_close(void) {
     mkfs();
     reinitialize_incore();
 
-    
+    struct directory *tdc_directory = directory_open(0);
+    struct inode *tdc_directory_inode = tdc_directory->inode;
+    int tdc_ref_count_before_close = tdc_directory_inode->ref_count;
+    directory_close(tdc_directory);
+    int tdc_ref_count_after_close = tdc_directory_inode->ref_count;
+    CTEST_ASSERT(tdc_ref_count_before_close > tdc_ref_count_after_close, "directory close decrements ref count on the directory's inode");
 
     // reset image
     image_close();
@@ -456,6 +461,7 @@ int main(void) {
     // added for project 7
     test_directory_open();
     test_directory_get();
+    test_directory_close();
 
     delete_test_image_files();
 
