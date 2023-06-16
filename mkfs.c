@@ -73,13 +73,15 @@ void directory_close(struct directory *d) {
 
 void mkfs(void) {
 
+    reinitialize_incore();
+
     // (1)  Write 1024 blocks of all zero bytes, sequentially, using the write() syscall. 
         /// This will make a 4096*1024-byte image, or 4 MB.
 
     unsigned char block[BLOCK_SIZE] = {0};
 
     for (int i = 0; i < NUM_BLOCKS; i++) {
-        write(image_fd, block, BLOCK_SIZE);
+        bwrite(image_fd, block);
     }
 
     // (2) Mark data blocks 0-6 as allocated by calling alloc() 7 times.
@@ -89,7 +91,7 @@ void mkfs(void) {
     }
 
     // (3) Add the root directory
-    
+
     struct inode *root_directory_inode = ialloc();
     int root_directory_block_num = alloc();
     root_directory_inode->flags = 2;  // 2 means file type is a directory
@@ -108,15 +110,4 @@ void mkfs(void) {
     // write directory file contents back out to disk and free the incore inode
     bwrite(root_directory_block_num, root_directory_data);
     iput(root_directory_inode);
-
-
-    // making sure things work
-    struct directory *directory1 = directory_open(0);
-    struct directory_entry *entry1 = malloc(sizeof(struct directory_entry));  // maybe i can't do this?
-    directory_get(directory1, entry1);
-    printf("inode: %d\n", entry1->inode_num);
-    printf("name: %s\n", entry1->name);
-    directory_get(directory1, entry1);
-    printf("inode: %d\n", entry1->inode_num);
-    printf("name: %s\n", entry1->name);
 }

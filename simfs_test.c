@@ -99,7 +99,7 @@ void test_set_and_find_free(void) {
     unsigned char tsff_free_block_bit_map[BLOCK_SIZE];
     bread(FREE_BLOCK_MAP_BLOCK_NUM, tsff_free_block_bit_map);
     int first_free_before_set = find_free(tsff_free_block_bit_map);
-    CTEST_ASSERT(first_free_before_set == NUM_PRECLAIMED_BLOCKS, "first free block before any setting is block 7"); // 0-6 are allocated by mkfs()
+    CTEST_ASSERT(first_free_before_set == NUM_PRECLAIMED_BLOCKS + 1, "first free block before any setting is block 8"); // 0-7 are allocated by mkfs()
 
     set_free(tsff_free_block_bit_map, NUM_PRECLAIMED_BLOCKS, 1);
     int first_free_after_set = find_free(tsff_free_block_bit_map);
@@ -338,6 +338,7 @@ void test_mkfs(void) {
 
     image_open("test_image", 1);
     mkfs();
+    reinitialize_incore();
 
     unsigned char tmkfs_random_block[BLOCK_SIZE];
     int random_block_not_preclaimed = NUM_PRECLAIMED_BLOCKS + rand() % (NUM_BLOCKS_IN_FILE_SYS - NUM_PRECLAIMED_BLOCKS);
@@ -350,6 +351,67 @@ void test_mkfs(void) {
     // CTEST_ASSERT(find_free(tmkfs_block_bit_map) == NUM_PRECLAIMED_BLOCKS, "first free block after mkfs() is 7");  // before adding root directory creation to mkfs
     CTEST_ASSERT(find_free(tmkfs_block_bit_map) == NUM_PRECLAIMED_BLOCKS + 1, "first free block after mkfs() is 8");
 
+    // reset image
+    image_close();
+}
+
+
+void test_directory_open(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    // load root directory 
+    struct directory *tdo_directory = directory_open(0);
+
+    CTEST_ASSERT(tdo_directory != NULL, "does not return null when attempting to open the root directory");
+
+    CTEST_ASSERT(tdo_directory->inode->inode_num == 0, "the returned directory's inode has the inode number of the root directory's inode");
+
+    CTEST_ASSERT(tdo_directory->offset == 0, "offset for root directory has been initialized to 0");
+
+    // fills all incore inodes so that iget will fail
+    reinitialize_incore();
+    for (int i = 0; i < MAX_SYS_OPEN_FILES; i++) {
+        iget(i);
+    }
+    int next_inode_num = MAX_SYS_OPEN_FILES;
+    CTEST_ASSERT(directory_open(next_inode_num) == NULL, "returns null if all incore inodes are being used for other inode nums");
+
+    // reset image
+    image_close();
+}
+
+
+void test_directory_get(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    struct directory *tdo_directory = directory_open(0);
+    struct directory_entry tdo_entry;
+    directory_get(tdo_directory, &tdo_entry);
+    CTEST_ASSERT(strcmp(tdo_entry.name, ".") == 0, "first directory get on root directory inode has name . for current directory");
+    CTEST_ASSERT(tdo_entry.inode_num == 0, "first directory get, the current directory entry, points to inode 0");
+    
+    directory_get(tdo_directory, &tdo_entry);
+    CTEST_ASSERT(strcmp(tdo_entry.name, "..") == 0, "second directory get on root directory inode has name .. for parent directory");
+    CTEST_ASSERT(tdo_entry.inode_num == 0, "first directory get, the parent directory entry, points to inode 0 as well");
+
+    // reset image
+    image_close();
+}
+
+
+void test_directory_close(void) {
+
+    image_open("test_image", 1);
+    mkfs();
+    reinitialize_incore();
+
+    
 
     // reset image
     image_close();
@@ -374,22 +436,26 @@ int main(void) {
 
     CTEST_VERBOSE(1);
 
-    // // added for project 5
-    // test_image_open();
-    // test_image_close();
-    // test_bread_and_bwrite();
-    // test_alloc();
-    // test_set_and_find_free();
+    // added for project 5
+    test_image_open();
+    test_image_close();
+    test_bread_and_bwrite();
+    test_alloc();
+    test_set_and_find_free();
     test_mkfs();
 
-    // // added for project 6
-    // test_find_incore_free();
-    // test_find_incore();
-    // test_read_inode();
-    // test_write_inode();
-    // test_iget();
-    // test_iput();
-    // test_ialloc();
+    // added for project 6
+    test_find_incore_free();
+    test_find_incore();
+    test_read_inode();
+    test_write_inode();
+    test_iget();
+    test_iput();
+    test_ialloc();
+
+    // added for project 7
+    test_directory_open();
+    test_directory_get();
 
     delete_test_image_files();
 
