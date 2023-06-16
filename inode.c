@@ -166,23 +166,23 @@ void write_inode(struct inode *in) {
     // go through incore inode, reading one field at a time, and writing it into the block
 
     // in an inode, the size is stored at byte 0 and is 4 bytes long
-    write_u32(&block[0], in->size);
+    write_u32(block + 0, in->size);
 
     // owner_id is at byte 4 and is 2 bytes long
-    write_u16(&block[4], in->owner_id);
+    write_u16(block + 4, in->owner_id);
 
     // permissions is at byte 6 and is 1 byte long
-    write_u8(&block[6], in->permissions);
+    write_u8(block + 6, in->permissions);
 
     // flags is at byte 7 and is 1 byte long
-    write_u8(&block[7], in->flags);
+    write_u8(block + 7, in->flags);
 
     // link_count is at byte 8 and is 1 byte long
-    write_u8(&block[8], in->link_count);
+    write_u8(block + 8, in->link_count);
 
     // the block_ptr array is at byte 9 and is 32 bytes long (INODE_PTR_COUNT = 16, 16 * 2 = 32)
     for (int i = 0; i < INODE_PTR_COUNT; i++) {
-        write_u16(&block[9+(2*i)], in->block_ptr[i]);
+        write_u16(block + 9 + (2*i), in->block_ptr[i]);
     }
 
     lseek(image_fd, total_offset_bytes, SEEK_SET);

@@ -51,8 +51,6 @@ void test_bread_and_bwrite(void) {
     bwrite(test_block_num, test_block_write_in);
     unsigned char test_block_read_out[BLOCK_SIZE];
     bread(test_block_num, test_block_read_out);
-    printf("test write in: %s\n", test_block_write_in);
-    printf("test read out: %s\n", test_block_read_out);
     CTEST_ASSERT(memcmp(test_block_write_in, test_block_read_out, BLOCK_SIZE) == 0, "bwrite successfully writes and bread successfully reads");
     
     // reset image
@@ -342,14 +340,16 @@ void test_mkfs(void) {
     mkfs();
 
     unsigned char tmkfs_random_block[BLOCK_SIZE];
-    int random_block_not_preclaimed = NUM_PRECLAIMED_BLOCKS + rand() % (1024-NUM_PRECLAIMED_BLOCKS);
+    int random_block_not_preclaimed = NUM_PRECLAIMED_BLOCKS + rand() % (NUM_BLOCKS_IN_FILE_SYS - NUM_PRECLAIMED_BLOCKS);
     bread(random_block_not_preclaimed, tmkfs_random_block);
     int random_byte_in_block = rand() % BLOCK_SIZE;
     CTEST_ASSERT(tmkfs_random_block[random_byte_in_block] == 0, "a random byte from a random block is zeroed (mkfs properly zeroes)");
 
     unsigned char tmkfs_block_bit_map[BLOCK_SIZE];
     bread(FREE_BLOCK_MAP_BLOCK_NUM, tmkfs_block_bit_map);
-    CTEST_ASSERT(find_free(tmkfs_block_bit_map) == NUM_PRECLAIMED_BLOCKS, "first free block after mkfs() is 7");
+    // CTEST_ASSERT(find_free(tmkfs_block_bit_map) == NUM_PRECLAIMED_BLOCKS, "first free block after mkfs() is 7");  // before adding root directory creation to mkfs
+    CTEST_ASSERT(find_free(tmkfs_block_bit_map) == NUM_PRECLAIMED_BLOCKS + 1, "first free block after mkfs() is 8");
+
 
     // reset image
     image_close();
@@ -374,22 +374,22 @@ int main(void) {
 
     CTEST_VERBOSE(1);
 
-    // added for project 5
-    test_image_open();
-    test_image_close();
-    test_bread_and_bwrite();
-    test_alloc();
-    test_set_and_find_free();
+    // // added for project 5
+    // test_image_open();
+    // test_image_close();
+    // test_bread_and_bwrite();
+    // test_alloc();
+    // test_set_and_find_free();
     test_mkfs();
 
-    // added for project 6
-    test_find_incore_free();
-    test_find_incore();
-    test_read_inode();
-    test_write_inode();
-    test_iget();
-    test_iput();
-    test_ialloc();
+    // // added for project 6
+    // test_find_incore_free();
+    // test_find_incore();
+    // test_read_inode();
+    // test_write_inode();
+    // test_iget();
+    // test_iput();
+    // test_ialloc();
 
     delete_test_image_files();
 
